@@ -1,0 +1,6 @@
+wikipedia
+cloudinary
+bitly_api
+wolframalpha
+jaraco.itertools
+requests
