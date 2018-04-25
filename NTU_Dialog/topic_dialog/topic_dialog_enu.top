@@ -1,0 +1,102 @@
+topic: ~topic_dialog()
+language: enu
+
+concept:(robot_name) [pepper robot machine]
+concept:(ans_robot_name) ^rand[yes "what can i do for you" "how can i help you" hello hey hi hey "Hey there" "Hello there" "hi there"]
+concept:(greetings) {~robot_name} [hello hey hi hey "Hey there" "Hello there" "hi there"] {~robot_name}
+concept:(greetings_ans) ^rand[hello hey hi hey "Hey there" "Hello there" "hi there"]
+concept:(question) {~robot_name} ["how are you" "how are you doing" "you alright" "what's going on"] {[today now]} {~robot_name}
+concept:(answer) ^rand["I am doing just fine" "I'm fine, thanks" "Oh I am feeling just good" "I feel good" "I'm alright. Thanks for asking"]
+concept:(ques_what_do_you_do) {~robot_name} ["what can you do" "what do you do" "what are you capable of" "what are you capable of doing" "what are the things you do"] {~robot_name}
+concept:(ans_what_do_you_do) ^rand["I can dance, take photo and answer all your questions" "You can ask me anything, I can even dance for you and take selfies" "I can solve maths, check weather, answer all your questions"]
+concept:(thanks) {~robot_name} ["Thanks" "Thank you"] {~robot_name}
+concept:(thanks_ans) ["You're welcome" "Thanks too" "Thank you too"]
+concept:(bye) {~robot_name} ["Bye" "bye bye" "nice talking to you" "see you later" "later"] {~robot_name}
+concept:(bye_ans) ["Bye too" "bye bye" "nice talking to you too" "see you later" "later"]
+concept:(robot_question) ["how are you" "how are you doing" "you alright" "what's going on" "How are you today" "And you, how are you" "How are you doing"]
+concept:(human_yes_answer) ["I am doing just fine" "I'm fine, thanks" "Oh I am feeling just good" "I feel good" "I'm alright. Thanks for asking"]
+#u1:(["I am fine"]) ["I'm glad you are fine" "Great" "I'm happy to hear that" "That a good news"]
+#u1:(["I am not fine"]) ["I'm so sorry about that" "Too bad, I hope I can help you" "Ooooh, sorry about that"]
+
+#carolines file
+# Defining needed concepts, keywords or sentences corresponding to a concept.
+concept:(yes) [yes "all right" sure "why not" ok certainly "very well" yep yea definitely amen]
+concept:(no) [no nope "don't want" "no way" never "not at all"]
+concept:(how) ["how are you" howdy "what's up" "how do you feel"]
+concept:(happy) [ok fine "feeling good" great happy blessed "all right" glad "not bad"]
+concept:(sad) [sad miserable unhappy]
+concept:(unwell) [tired sick depressed weary "feeling off"]
+concept:(repeat) [repeat understand]
+concept:(thx) ["thank you" thanks "much obliged" merci]
+concept:(hello) [hello hi hey "good evening" greetings]
+concept:(bye) [bye goodbye "bye bye" "tata" "see you" cheerio "so long" farewell "have a nice day"]
+concept:(helpcare) [Alfa "care advice" "can you assist me"]
+concept:(neutral) ["\style=neutral\ \vct=105\ \rspd=110\ "]
+concept:(joyful) ["\style=joyful\ \vct=95\ \rspd=90\ "]
+
+
+u:(~robot_name) ~ans_robot_name
+u:(~greetings) ~greetings_ans
+u:(~question) ~answer
+u:(~ques_what_do_you_do) ~ans_what_do_you_do
+u:(~thanks) ~thanks_ans
+u:(~bye) ~bye_ans
+u:(["what is your name" "who are you" "What are you"]) ["I am pepper" "My name is pepper" "You can call me pepper"] 
+u:({[please "can you" "do you"]} [dance sing]) ^start(ntu-dance-app) Of course I can dance ^wait(ntu-dance-app)
+u:({[please "can you"]} {[take snap capture]} {a} [picture photo]) ^start(ntu-photo-app/behavior_1) Oh yes, get ready ^wait(ntu-photo-app/behavior_1)
+u:(_*) $onKeyword=$1
+
+#touching event
+u:([e:FrontTactilTouched e:MiddleTactilTouched]) ["Ahh I like it when you touch my head" "I feel loved" "Hahaha, I feel like a cat" "Touching my head makes me feel special"]
+u:(Are you happy) $Dialog/LastInput
+
+
+
+#carolines file
+# Start/Wait animation, Goto.
+# If User expresses a word or a sentence found in the concept "hello",
+# the robot starts Hey_1 animation, answers a random value defined in concept "hello"
+# and waits for the end of the animation before going to the label how. Label is expressed this way: %howAreYou
+u:(~helpcare) ^start(animations/Stand/Gestures/Hey_1) ~hello \pau=500\  I'm here to help. \pau=500\ ^wait(animations/Stand/Gestures/Hey_1) ^gotoReactivate(howAreYou)
+
+
+# Tag animation.
+# If User asks how the robot feels, it starts a random animation being tagged "myself",
+# answers and go to the label %howAreYou
+u:(~how) ^startTag(myself) I'm fine, thank you. And you, ^gotoReactivate(howAreYou)
+
+
+# %Label.
+# The robot asks how the user feels. 3 kind of answers are expected
+# Expressed by concept, user can be happy, sad or ask the robot to repeat the question.
+proposal: %howAreYou $showNeutral=1 ^startTag(show) how are you today?
+u:(~happy) $displayCare=1 ~joyful I'm glad you are fine! 
+u:(~sad) $showNeutral=1 ~neutral Oh, I feel sorry for you. ^nextProposal
+u:(~unwell) $showNeutral=1 ~neutral Oh dear, that's not good. ^run(animations/Stand/Gestures/Desperate_1) Is it because you haven't slept well?
+    u1:(~yes) $ShowRemember=1 Ok, then I will remind you to go to bed earlier tonight.  ^nextProposal
+    u1:(~no) $ShowRemember=1 Well, I will remember that you don't feel good today.  If you are still poorly tomorrow, we might have to make a doctor's appointment. Is that ok? 
+        u2:(~yes) Good. If you want me to stop, just say goodbye and I'll keep quiet.
+        u2:(~no) Ok, but perhaps you need to think about reducing your stress.
+
+# If User is sad or tired(known from previous question), the robot proposes to play music.
+# If User accepts, it will play music
+proposal: %talkabout If you feel like talking about anything, don't hesitate. #^nextProposal
+proposal: Do you want me to play music?
+    u1:(~yes) Ok, I will. $PlayLullaby=1 ^run(animations/Stand/Gestures/CalmDown_5)
+    u1:(~no) Ok, maybe another time. \pau=1000\  #^gotoReactivate(talkabout)
+
+# On any proposal if user asks to repeat, say again the same proposal.
+u:(~repeat) I'll repeat for you. ^sameProposal
+
+# Being polite, the robot always answers accordingly to thankfull sentences.
+u:(~thx) You're welcome
+
+
+# Exiting.
+# Answering to Goodbye and exiting the dialog box, stimulating the onStopped output slot.
+u:(~bye) $ShowEnding=1 Goodbye. ^run(animations/Stand/Gestures/BowShort_1) Thank you for talking to me  $onStopped=1
+
+# Responding to events.
+# Here, if the left foot bumper is pressed, the robot starts an animation,
+# say a text and waits for the end of the animation.
+u:(e:LeftBumperPressed) ^start(animations/Stand/Gestures/YouKnowWhat_1) My left foot bumped into something! ^wait(animations/Stand/Gestures/YouKnowWhat_1)
